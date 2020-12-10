@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, jsonify, make_response
 
 app = Flask(__name__)
 
+
 @app.route('/temp/<city>')
 def temperature(city):
     assert city == request.view_args['city']
@@ -36,6 +37,42 @@ def pressure(city):
         return jsonify(press)
     else:
         return f'Error getting pressure for {city.title()}'
+
+
+@app.route('/humidity/<city>')
+def humidity(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+    url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response = requests.get(url).json()
+
+    if response.get('cod') != 200:
+        return make_response(f'Error getting humidity for {city.title()}!', 404)
+
+    humidity = response.get('main', {}).get('humidity')
+    if humidity:
+        return jsonify(humidity)
+    else:
+        return f'Error getting humidity for {city.title()}'
+
+
+@app.route('/wind/speed/<city>')
+def wind(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+    url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response = requests.get(url).json()
+
+    if response.get('cod') != 200:
+        return make_response(f'Error getting wind speed for {city.title()}!', 404)
+
+    windspeed = response.get('wind', {}).get('speed')
+    if windspeed:
+        return jsonify(windspeed)
+    else:
+        return f'Error getting wind speed for {city.title()}'
+
+
 
 
 if __name__ == '__main__':
