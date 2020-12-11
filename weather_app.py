@@ -73,6 +73,31 @@ def wind(city):
         return f'Error getting wind speed for {city.title()}'
 
 
+@app.route('/aqi/<city>')
+def aqi(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+    google_key = environ.get('GOOGLE_KEY')
+    googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+    googleResponse = requests.get(googleUrl).json()
+
+    result = googleResponse['results'][0]
+
+    geodata = dict()
+    geodata['lat'] = result['geometry']['location']['lat']
+    geodata['lng'] = result['geometry']['location']['lng']
+
+    latitude = geodata['lat']
+    longitude = geodata['lng']
+
+    url = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
+    response = requests.get(url).json()
+
+    airquality = response.get('list')[0].get('main', {}).get('aqi')
+    if airquality:
+        return jsonify(airquality)
+    else:
+        return f'Error getting air quality for city: {city.title()}'
 
 
 if __name__ == '__main__':
