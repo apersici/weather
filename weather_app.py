@@ -100,6 +100,39 @@ def aqi(city):
         return f'Error getting air quality for city: {city.title()}'
 
 
+@app.route('/days/<city>')
+def days(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+    google_key = environ.get('GOOGLE_KEY')
+    part = 'hourly'
+    googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+    googleResponse = requests.get(googleUrl).json()
+
+    result = googleResponse['results'][0]
+
+    geodata = dict()
+    geodata['lat'] = result['geometry']['location']['lat']
+    geodata['lng'] = result['geometry']['location']['lng']
+
+    latitude = geodata['lat']
+    longitude = geodata['lng']
+
+    url = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
+    response = requests.get(url).json()
+
+    days1 = response.get('daily')[0].get('temp').get('day')
+    days2 = response.get('daily')[1].get('temp').get('day')
+    days3 = response.get('daily')[2].get('temp').get('day')
+    days4 = response.get('daily')[3].get('temp').get('day')
+    days5 = response.get('daily')[4].get('temp').get('day')
+    days6 = response.get('daily')[5].get('temp').get('day')
+    days7 = response.get('daily')[6].get('temp').get('day')
+
+    s = f'{days1} {days2} {days3} {days4} {days5} {days6} {days7}'
+    return jsonify(s)
+
+
 if __name__ == '__main__':
 
     app.run(debug=True, port=int(environ.get('PORT', 5000)))
