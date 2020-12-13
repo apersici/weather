@@ -1,9 +1,65 @@
 from os import environ
 import requests
+import telebot
 from flask import Flask, render_template, request, jsonify, make_response
+from telebot import *
 
 app = Flask(__name__)
 
+
+bot_token = environ.get('BOT_TOKEN')
+bot = telebot.TeleBot(bot_token, parse_mode=None)
+
+telegramUrl = f'https://api.telegram.org/bot{bot_token}'
+
+
+def sendMessage(chat_id, text):
+    tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
+    r = requests.post(tUrl)
+    return r.json()
+
+
+@app.route('/', methods=['POST', 'GET'])
+def index():
+    api_key = environ.get('API_KEY')
+    if request.method == 'POST':
+        r = request.get_json()
+        chat_id = r.get('message').get('chat').get('id')
+        message = r.get('message').get('text')
+
+        if message == '/start':
+            sendMessage(chat_id, text=f'Welcome to WeatherBot! \nPlease input a city:')
+        elif message == '/info':
+            sendMessage(chat_id, text=f'You can get information about:\n'
+                                      f'1) Temperature\n'
+                                      f'2) Pressure\n'
+                                      f'3) Humidity\n'
+                                      f'4) Felt Temperature\n'
+                                      f'5) Wind Speed\n'
+                                      f'6) Air Quality\n'
+                                      f'7) 7 Day Forecast')
+        else:
+
+            url = f'http://api.openweathermap.org/data/2.5/weather?q={message}&APPID={api_key}&units=metric'
+            response = requests.get(url).json()
+
+            if response.get('cod') != 200:
+                message = response.get('message', '')
+                sendMessage(chat_id, text=f'{message.title()}. Try again!')
+            else:
+                sendMessage(chat_id, text=f'Here is what you can do:\n'
+                                          f'\nType /temp to get the temperature\n'
+                                          f'Type /press to get the pressure\n'
+                                          f'Type /humidity to get the humidity\n'
+                                          f'Type /felt to get the felt temperature\n'
+                                          f'Type /windspeed to get the wind speed\n'
+                                          f'Type /airquality to get the air quality\n'
+                                          f'Type /days to get a seven day forecast')
+
+        return jsonify(r)
+
+    else:
+        return '<h1>Welcome to weather app</h1>'
 
 @app.route('/temp/<city>')
 def temperature(city):
