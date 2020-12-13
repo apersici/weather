@@ -40,6 +40,28 @@ def sendPressure(chat_id, text):
         return r.json()
 
 
+def sendHumidity(chat_id, text):
+    if 'Error' in text:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
+        r = requests.post(tUrl)
+        return r.json()
+    else:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} %'
+        r = requests.post(tUrl)
+        return r.json()
+
+
+def sendFeltTemp(chat_id, text):
+    if 'Error' in text:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
+        r = requests.post(tUrl)
+        return r.json()
+    else:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}°C'
+        r = requests.post(tUrl)
+        return r.json()
+
+
 @app.route('/', methods=['POST', 'GET'])
 def index():
     api_key = environ.get('API_KEY')
@@ -69,6 +91,16 @@ def index():
             response = requests.get(urltwo)
             response2 = response.content
             sendPressure(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/humidity':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/humidity/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendHumidity(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/felt':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/feelslike/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendFeltTemp(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         else:
 
             url = f'http://api.openweathermap.org/data/2.5/weather?q={message}&APPID={api_key}&units=metric'
