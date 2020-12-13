@@ -18,6 +18,27 @@ def sendMessage(chat_id, text):
     r = requests.post(tUrl)
     return r.json()
 
+def sendTemperature(chat_id, text):
+    if 'Error' in text:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
+        r = requests.post(tUrl)
+        return r.json()
+    else:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}°C'
+        r = requests.post(tUrl)
+        return r.json()
+
+
+def sendPressure(chat_id, text):
+    if 'Error' in text:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
+        r = requests.post(tUrl)
+        return r.json()
+    else:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} Pa'
+        r = requests.post(tUrl)
+        return r.json()
+
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
@@ -38,6 +59,16 @@ def index():
                                       f'5) Wind Speed\n'
                                       f'6) Air Quality\n'
                                       f'7) 7 Day Forecast')
+        elif message == '/temp':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendTemperature(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/press':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendPressure(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         else:
 
             url = f'http://api.openweathermap.org/data/2.5/weather?q={message}&APPID={api_key}&units=metric'
