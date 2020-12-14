@@ -18,6 +18,7 @@ def sendMessage(chat_id, text):
     r = requests.post(tUrl)
     return r.json()
 
+
 def sendTemperature(chat_id, text):
     if 'Error' in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
@@ -76,6 +77,14 @@ def sendDays(chat_id, text):
     return r.json()
 
 
+def sendAll(chat_id, text):
+    text = text.replace("-", "%0A")
+    text = text[1:-1]
+    tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
+    r = requests.post(tUrl)
+    return r.json()
+
+
 @app.route('/', methods=['POST', 'GET'])
 def index():
     api_key = environ.get('API_KEY')
@@ -125,6 +134,14 @@ def index():
             response = requests.get(urltwo)
             response2 = response.content
             sendDays(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/all':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/all/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendAll(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == 'start' or message == 'info' or message == 'temp' or message == 'press' or message == 'humidity' or message == 'felt'\
+                or message == 'windspeed' or message == 'airquality' or message == 'days' or message == 'all':
+            sendMessage(chat_id, text=f'City not found. Try again!')
         else:
 
             url = f'http://api.openweathermap.org/data/2.5/weather?q={message}&APPID={api_key}&units=metric'
@@ -273,7 +290,7 @@ def days(city):
     days6 = response.get('daily')[5].get('temp').get('day')
     days7 = response.get('daily')[6].get('temp').get('day')
 
-    s = f'{days1} {days2} {days3} {days4} {days5} {days6} {days7}'
+    s = f'Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
     return jsonify(s)
 
 
@@ -331,7 +348,7 @@ def all(city):
     days6 = responseOneCall.get('daily')[5].get('temp').get('day')
     days7 = responseOneCall.get('daily')[6].get('temp').get('day')
 
-    s = s + f'{days1} {days2} {days3} {days4} {days5} {days6} {days7}'
+    s = s + f'-Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
 
     return jsonify(s)
 
