@@ -277,6 +277,65 @@ def days(city):
     return jsonify(s)
 
 
+@app.route('/all/<city>')
+def all(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+    google_key = environ.get('GOOGLE_KEY')
+    part = 'hourly'
+    url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response = requests.get(url).json()
+
+    if response.get('cod') != 200:
+        message = response.get('message', '')
+        return f'Error getting temperature for {city.title()}. Error message = {message})'
+
+    current_temperature = response.get('main', {}).get('temp')
+    press = response.get('main', {}).get('pressure')
+    humidity = response.get('main', {}).get('humidity')
+    feelslike = response.get('main', {}).get('feels_like')
+    windspeed = response.get('wind', {}).get('speed')
+
+    s = f'Temperature: {current_temperature} C-' \
+        f'Pressure: {press} Pa-Humidity: {humidity}/100-Felt temperature: {feelslike} C-Wind Speed: {windspeed} km/h-'
+
+    googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+    googleResponse = requests.get(googleUrl).json()
+
+    result = googleResponse['results'][0]
+
+    geodata = dict()
+    geodata['lat'] = result['geometry']['location']['lat']
+    geodata['lng'] = result['geometry']['location']['lng']
+
+    latitude = geodata['lat']
+    longitude = geodata['lng']
+
+    urlPollution = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
+    responsePollution = requests.get(urlPollution).json()
+
+    airquality = responsePollution.get('list')[0].get('main', {}).get('aqi')
+    if airquality:
+            s = s + f'Air quality: {airquality}-'
+    else:
+        return f'Error getting air quality for city: {city}'
+
+    urlOneCall = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
+    responseOneCall = requests.get(urlOneCall).json()
+
+    days1 = responseOneCall.get('daily')[0].get('temp').get('day')
+    days2 = responseOneCall.get('daily')[1].get('temp').get('day')
+    days3 = responseOneCall.get('daily')[2].get('temp').get('day')
+    days4 = responseOneCall.get('daily')[3].get('temp').get('day')
+    days5 = responseOneCall.get('daily')[4].get('temp').get('day')
+    days6 = responseOneCall.get('daily')[5].get('temp').get('day')
+    days7 = responseOneCall.get('daily')[6].get('temp').get('day')
+
+    s = s + f'{days1} {days2} {days3} {days4} {days5} {days6} {days7}'
+
+    return jsonify(s)
+
+
 if __name__ == '__main__':
 
     app.run(debug=True, port=int(environ.get('PORT', 5000)))
