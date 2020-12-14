@@ -62,6 +62,20 @@ def sendFeltTemp(chat_id, text):
         return r.json()
 
 
+def sendAirQuality(chat_id, text):
+    tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
+    r = requests.post(tUrl)
+    return r.json()
+
+
+def sendDays(chat_id, text):
+    text = text.replace("-", "%0A")
+    text = text[1:-1]
+    tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
+    r = requests.post(tUrl)
+    return r.json()
+
+
 @app.route('/', methods=['POST', 'GET'])
 def index():
     api_key = environ.get('API_KEY')
@@ -101,6 +115,16 @@ def index():
             response = requests.get(urltwo)
             response2 = response.content
             sendFeltTemp(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/airquality':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/aqi/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendAirQuality(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/days':
+            urltwo = f'https://weatherserviceuni.herokuapp.com/days/{message}'
+            response = requests.get(urltwo)
+            response2 = response.content
+            sendDays(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         else:
 
             url = f'http://api.openweathermap.org/data/2.5/weather?q={message}&APPID={api_key}&units=metric'
@@ -123,6 +147,7 @@ def index():
 
     else:
         return '<h1>Welcome to weather app</h1>'
+
 
 @app.route('/temp/<city>')
 def temperature(city):
