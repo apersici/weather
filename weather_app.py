@@ -6,6 +6,34 @@ from telebot import *
 
 app = Flask(__name__)
 
+########## EMOJIs ##########
+
+thunderstorm = u'\U0001F4A8'
+drizzle = u'\U0001F4A7'
+rain = u'\U00002614'
+snowflake = u'\U00002744'
+snowman = u'\U000026C4'
+atmosphere = u'\U0001F301'
+clearSky = u'\U00002600'
+fewClouds = u'\U000026C5'
+clouds = u'\U00002601'
+hot = u'\U0001F525'
+defaultEmoji = u'\U0001F300'
+wind_emoji = u'\U0001F32A'
+cold_emoji = u'\U0001F976'
+mind_emoji = u'\U0001F92F'
+faceExhaling_emoji = u'\U0001F62E'
+umbrella_emoji = u'\U00002602'
+ok_emoji = u'\U0001F44C'
+pressure_emoji = u'\U0001F62C'
+compass_emoji = u'\U0001F9ED'
+airplane_emoji = u'\U00002708'
+windblow_emoji = u'\U0001F32C'
+calendar_emoji = u'\U0001F4C6'
+wink_emoji = u'\U0001F609'
+
+############################
+
 
 bot_token = environ.get('BOT_TOKEN')
 bot = telebot.TeleBot(bot_token, parse_mode=None)
@@ -90,20 +118,23 @@ def index():
     api_key = environ.get('API_KEY')
     if request.method == 'POST':
         r = request.get_json()
+        first_name = r.get('message').get('chat').get('first_name')
         chat_id = r.get('message').get('chat').get('id')
         message = r.get('message').get('text')
 
         if message == '/start':
-            sendMessage(chat_id, text=f'Welcome to WeatherBot! \nPlease input a city:')
+            sendMessage(chat_id, text=f'Hello {first_name}!\nWelcome to WeatherBot {clearSky}\n\nPlease input a city:')
         elif message == '/info':
             sendMessage(chat_id, text=f'You can get information about:\n'
-                                      f'1) Temperature\n'
-                                      f'2) Pressure\n'
-                                      f'3) Humidity\n'
-                                      f'4) Felt Temperature\n'
-                                      f'5) Wind Speed\n'
-                                      f'6) Air Quality\n'
-                                      f'7) 7 Day Forecast')
+                                      f'1) Temperature {hot}\n'
+                                      f'2) Pressure {compass_emoji}\n'
+                                      f'3) Humidity {drizzle}\n'
+                                      f'4) Felt Temperature {cold_emoji}\n'
+                                      f'5) Wind Speed {wind_emoji}\n'
+                                      f'6) Air Quality {airplane_emoji}\n'
+                                      f'7) 7 Day Forecast {calendar_emoji}\n'
+                                      f'8) All of the above {mind_emoji}\n'
+                                      f'\nIf you wish to change the city, just type a new one! {wink_emoji}')
         elif message == '/temp':
             urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
             response = requests.get(urltwo)
@@ -151,14 +182,16 @@ def index():
                 message = response.get('message', '')
                 sendMessage(chat_id, text=f'{message.title()}. Try again!')
             else:
-                sendMessage(chat_id, text=f'Here is what you can do:\n'
-                                          f'\nType /temp to get the temperature\n'
-                                          f'Type /press to get the pressure\n'
-                                          f'Type /humidity to get the humidity\n'
-                                          f'Type /felt to get the felt temperature\n'
-                                          f'Type /windspeed to get the wind speed\n'
-                                          f'Type /airquality to get the air quality\n'
-                                          f'Type /days to get a seven day forecast')
+                sendMessage(chat_id, text=f'{message} it is then! {ok_emoji}\n'
+                                          f'\nHere is what you can do:\n'
+                                          f'\nType /temp to get the temperature {hot} in {message}\n'
+                                          f'Type /press to get the pressure {compass_emoji} in {message}\n'
+                                          f'Type /humidity to get the humidity {drizzle} in {message}\n'
+                                          f'Type /felt to get the felt temperature {cold_emoji}  in {message}\n'
+                                          f'Type /windspeed to get the wind speed {wind_emoji} in {message}\n'
+                                          f'Type /airquality to get the air quality {windblow_emoji} in {message}\n'
+                                          f'Type /days to get a seven day forecast {calendar_emoji} for {message}\n'
+                                          f'Type /all to get all of the above {mind_emoji}')
 
         return jsonify(r)
 
