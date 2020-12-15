@@ -88,19 +88,16 @@ clearSky = u'\U00002600'
 fewClouds = u'\U000026C5'
 clouds = u'\U00002601'
 hot = u'\U0001F525'
-defaultEmoji = u'\U0001F300'
 wind_emoji = u'\U0001F32A'
 cold_emoji = u'\U0001F976'
-mind_emoji = u'\U0001F92F'
 faceExhaling_emoji = u'\U0001F62E'
 umbrella_emoji = u'\U00002602'
 ok_emoji = u'\U0001F44C'
-pressure_emoji = u'\U0001F62C'
 compass_emoji = u'\U0001F9ED'
-airplane_emoji = u'\U00002708'
 windblow_emoji = u'\U0001F32C'
 calendar_emoji = u'\U0001F4C6'
 wink_emoji = u'\U0001F609'
+sunglasses_emoji = u'\U0001F60E'
 
 ############################
 
@@ -205,17 +202,6 @@ def index():
 
         if message == '/start':
             sendMessage(chat_id, text=f'Hello {first_name}!\nWelcome to WeatherBot {clearSky}\n\nPlease input a city:')
-        elif message == '/info':
-            sendMessage(chat_id, text=f'You can get information about:\n'
-                                      f'1) Temperature {hot}\n'
-                                      f'2) Pressure {compass_emoji}\n'
-                                      f'3) Humidity {drizzle}\n'
-                                      f'4) Felt Temperature {cold_emoji}\n'
-                                      f'5) Wind Speed {wind_emoji}\n'
-                                      f'6) Air Quality {airplane_emoji}\n'
-                                      f'7) 7 Day Forecast {calendar_emoji}\n'
-                                      f'8) All of the above {mind_emoji}\n'
-                                      f'\nIf you wish to change the city, just type a new one! {wink_emoji}')
         elif message == '/temp':
             message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
@@ -264,7 +250,7 @@ def index():
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendAll(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
-        elif message == 'start' or message == 'info' or message == 'temp' or message == 'press' or message == 'humidity' or message == 'felt'\
+        elif message == 'start' or message == 'temp' or message == 'press' or message == 'humidity' or message == 'felt'\
                 or message == 'windspeed' or message == 'airquality' or message == 'days' or message == 'all':
             sendMessage(chat_id, text=f'City not found. Try again!')
         else:
@@ -285,7 +271,8 @@ def index():
                                           f'Type /windspeed to get the wind speed {wind_emoji} in {message}\n'
                                           f'Type /airquality to get the air quality {windblow_emoji} in {message}\n'
                                           f'Type /days to get a seven day forecast {calendar_emoji} for {message}\n'
-                                          f'Type /all to get all of the above {mind_emoji}')
+                                          f'Type /all to get all of the above {sunglasses_emoji}\n\n'
+                                          f'If you want to change the city, just type a new one! {wink_emoji}')
                 try:
                     insertValue(chat_id, message)
                 except psycopg2.Error as e:
