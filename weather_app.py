@@ -43,6 +43,24 @@ def insertValue(chat_id, message):
         logger.error("FunctionName: %s", error)
 
 
+def getValue(chat_id):
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT name, number FROM cities WHERE chat_id = {chat_id} ORDER BY number DESC")
+        rows = cur.fetchall()
+
+        if rows:
+            message = str(rows[0]).split(",")[0].replace("(", "")
+            message = message[1:-1]
+            return message
+        else:
+            return 0
+        cur.close()
+    except psycopg2.Error as e:
+        error = e.pgcode
+        logger.error("FunctionName: %s", error)
+
+
 username = environ.get('USERNAME')
 password = environ.get('PASSWORD')
 
@@ -143,6 +161,17 @@ def sendFeltTemp(chat_id, text):
         return r.json()
 
 
+def sendWindSpeed(chat_id, text):
+    if 'Error' in text:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
+        r = requests.post(tUrl)
+        return r.json()
+    else:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} km/h'
+        r = requests.post(tUrl)
+        return r.json()
+
+
 def sendAirQuality(chat_id, text):
     tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
     r = requests.post(tUrl)
@@ -188,36 +217,49 @@ def index():
                                       f'8) All of the above {mind_emoji}\n'
                                       f'\nIf you wish to change the city, just type a new one! {wink_emoji}')
         elif message == '/temp':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendTemperature(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/press':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendPressure(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/humidity':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/humidity/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendHumidity(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/felt':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/feelslike/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendFeltTemp(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+        elif message == '/windspeed':
+            message = getValue(chat_id)
+            urltwo = f'https://weatherserviceuni.herokuapp.com/wind/speed/{message}'
+            response = requests.get(urltwo, auth=(username, password))
+            response2 = response.content
+            sendWindSpeed(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/airquality':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/aqi/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendAirQuality(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/days':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/days/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendDays(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/all':
+            message = getValue(chat_id)
             urltwo = f'https://weatherserviceuni.herokuapp.com/all/{message}'
             response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
