@@ -2,9 +2,26 @@ from os import environ
 import requests
 import telebot
 from flask import Flask, render_template, request, jsonify, make_response
+from functools import wraps
 from telebot import *
 
 app = Flask(__name__)
+
+
+username = environ.get('USERNAME')
+password = environ.get('PASSWORD')
+
+
+def auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if auth and auth.username == username and auth.password == password:
+            return f(*args, **kwargs)
+
+        return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
+    return decorated
+
 
 ########## EMOJIs ##########
 
@@ -137,37 +154,37 @@ def index():
                                       f'\nIf you wish to change the city, just type a new one! {wink_emoji}')
         elif message == '/temp':
             urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendTemperature(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/press':
             urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendPressure(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/humidity':
             urltwo = f'https://weatherserviceuni.herokuapp.com/humidity/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendHumidity(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/felt':
             urltwo = f'https://weatherserviceuni.herokuapp.com/feelslike/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendFeltTemp(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/airquality':
             urltwo = f'https://weatherserviceuni.herokuapp.com/aqi/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendAirQuality(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/days':
             urltwo = f'https://weatherserviceuni.herokuapp.com/days/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendDays(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == '/all':
             urltwo = f'https://weatherserviceuni.herokuapp.com/all/{message}'
-            response = requests.get(urltwo)
+            response = requests.get(urltwo, auth=(username, password))
             response2 = response.content
             sendAll(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
         elif message == 'start' or message == 'info' or message == 'temp' or message == 'press' or message == 'humidity' or message == 'felt'\
@@ -195,11 +212,17 @@ def index():
 
         return jsonify(r)
 
+
     else:
-        return '<h1>Welcome to weather app</h1>'
+
+        if request.authorization and request.authorization.username == username and request.authorization.password == password:
+            return '<h1>You are logged in</h1>'
+
+        return make_response('Could not verify!', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 
 @app.route('/temp/<city>')
+@auth_required
 def temperature(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
@@ -217,6 +240,7 @@ def temperature(city):
 
 
 @app.route('/pressure/<city>')
+@auth_required
 def pressure(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
@@ -234,6 +258,7 @@ def pressure(city):
 
 
 @app.route('/humidity/<city>')
+@auth_required
 def humidity(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
@@ -251,6 +276,7 @@ def humidity(city):
 
 
 @app.route('/wind/speed/<city>')
+@auth_required
 def wind(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
@@ -268,6 +294,7 @@ def wind(city):
 
 
 @app.route('/aqi/<city>')
+@auth_required
 def aqi(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
@@ -295,6 +322,7 @@ def aqi(city):
 
 
 @app.route('/days/<city>')
+@auth_required
 def days(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
@@ -328,6 +356,7 @@ def days(city):
 
 
 @app.route('/all/<city>')
+@auth_required
 def all(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
