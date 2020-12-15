@@ -31,6 +31,18 @@ except:
     print("Database not connected")
 
 
+def insertValue(chat_id, message):
+    try:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO Cities (CHAT_ID, NAME, NUMBER) VALUES (%s, %s, nextval('cities_increment'))", (chat_id, message))
+        conn.commit()
+        print("Data inserted succesfully")
+        cur.close()
+    except psycopg2.Error as e:
+        error = e.pgcode
+        logger.error("FunctionName: %s", error)
+
+
 username = environ.get('USERNAME')
 password = environ.get('PASSWORD')
 
@@ -232,9 +244,13 @@ def index():
                                           f'Type /airquality to get the air quality {windblow_emoji} in {message}\n'
                                           f'Type /days to get a seven day forecast {calendar_emoji} for {message}\n'
                                           f'Type /all to get all of the above {mind_emoji}')
+                try:
+                    insertValue(chat_id, message)
+                except psycopg2.Error as e:
+                    error = e.pgcode
+                    logger.error("FunctionName: %s", error)
 
         return jsonify(r)
-
 
     else:
 
