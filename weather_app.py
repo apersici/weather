@@ -170,23 +170,23 @@ def sendWindSpeed(chat_id, text):
 
 
 def sendAirQuality(chat_id, text):
-    if text == 1:
+    if "1" in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (good)'
         r = requests.post(tUrl)
         return r.json()
-    elif text == 2:
+    elif "2" in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (fair)'
         r = requests.post(tUrl)
         return r.json()
-    elif text == 3:
+    elif "3" in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (moderate)'
         r = requests.post(tUrl)
         return r.json()
-    elif text == 4:
+    elif "4" in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (poor)'
         r = requests.post(tUrl)
         return r.json()
-    elif text == 5:
+    elif "5" in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (very poor)'
         r = requests.post(tUrl)
         return r.json()
