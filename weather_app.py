@@ -1,11 +1,34 @@
 from os import environ
+import psycopg2
 import requests
 import telebot
 from flask import Flask, render_template, request, jsonify, make_response
 from functools import wraps
+from flask import Response
 from telebot import *
 
 app = Flask(__name__)
+
+db_host = environ.get('DB_HOST')
+database = environ.get('DATABASE')
+db_user = environ.get('DB_USER')
+db_pass = environ.get('DB_PASSWORD')
+db_port = environ.get('DB_PORT')
+database_url = environ.get('DATABASE_URL')
+
+
+try:
+    conn = psycopg2.connect(
+    host=db_host,
+    database=database,
+    user=db_user,
+    password=db_pass,
+    port=db_port)
+
+    print("Database connected")
+except:
+    Response.status(503)
+    print("Database not connected")
 
 
 username = environ.get('USERNAME')
@@ -273,6 +296,24 @@ def humidity(city):
         return jsonify(humidity)
     else:
         return f'Error getting humidity for {city.title()}'
+
+
+@app.route('/feelslike/<city>')
+@auth_required
+def feelslike(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+    url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response = requests.get(url).json()
+
+    if response.get('cod') != 200:
+        return make_response(f'Error getting felt temperature for {city.title()}!', 404)
+
+    feelslike = response.get('main', {}).get('feels_like')
+    if feelslike:
+        return jsonify(feelslike)
+    else:
+        return f'Error getting felt temperature for {city.title()}'
 
 
 @app.route('/wind/speed/<city>')
