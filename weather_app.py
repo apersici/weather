@@ -170,9 +170,26 @@ def sendWindSpeed(chat_id, text):
 
 
 def sendAirQuality(chat_id, text):
-    tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
-    r = requests.post(tUrl)
-    return r.json()
+    if text == 1:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (good)'
+        r = requests.post(tUrl)
+        return r.json()
+    elif text == 2:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (fair)'
+        r = requests.post(tUrl)
+        return r.json()
+    elif text == 3:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (moderate)'
+        r = requests.post(tUrl)
+        return r.json()
+    elif text == 4:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (poor)'
+        r = requests.post(tUrl)
+        return r.json()
+    elif text == 5:
+        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (very poor)'
+        r = requests.post(tUrl)
+        return r.json()
 
 
 def sendDays(chat_id, text):
@@ -480,8 +497,16 @@ def all(city):
     responsePollution = requests.get(urlPollution).json()
 
     airquality = responsePollution.get('list')[0].get('main', {}).get('aqi')
-    if airquality:
-            s = s + f'Air quality: {airquality}-'
+    if airquality == 1:
+        s = s + f'Air quality: {airquality} (good)-'
+    elif airquality == 2:
+        s = s + f'Air quality: {airquality} (fair)-'
+    elif airquality == 3:
+        s = s + f'Air quality: {airquality} (moderate)-'
+    elif airquality == 4:
+        s = s + f'Air quality: {airquality} (poor)-'
+    elif airquality == 5:
+        s = s + f'Air quality: {airquality} (very poor)-'
     else:
         return f'Error getting air quality for city: {city}'
 
