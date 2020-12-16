@@ -35,7 +35,7 @@ This way, the telegram bot will be able to retrieve information on the weather
 for the last city the user wrote in the chat.
 
 <p align="center">
-  <img src='images/database.jpg' height='250' width='400' />
+  <img src='images/database.jpg' height='150' width='400' />
 </p>
 
 PostgreSQL was the DBMS adopted.
