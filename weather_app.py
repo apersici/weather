@@ -401,27 +401,34 @@ def wind(city):
 def aqi(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
-    google_key = environ.get('GOOGLE_KEY')
-    googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
-    googleResponse = requests.get(googleUrl).json()
 
-    result = googleResponse['results'][0]
+    url_two = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response_two = requests.get(url_two).json()
 
-    geodata = dict()
-    geodata['lat'] = result['geometry']['location']['lat']
-    geodata['lng'] = result['geometry']['location']['lng']
-
-    latitude = geodata['lat']
-    longitude = geodata['lng']
-
-    url = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
-    response = requests.get(url).json()
-
-    airquality = response.get('list')[0].get('main', {}).get('aqi')
-    if airquality:
-        return jsonify(airquality)
+    if response_two.get('cod') != 200:
+        return make_response(f'Error getting air quality for {city.title()}!', 404)
     else:
-        return f'Error getting air quality for city: {city.title()}'
+        google_key = environ.get('GOOGLE_KEY')
+        googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+        googleResponse = requests.get(googleUrl).json()
+
+        result = googleResponse['results'][0]
+
+        geodata = dict()
+        geodata['lat'] = result['geometry']['location']['lat']
+        geodata['lng'] = result['geometry']['location']['lng']
+
+        latitude = geodata['lat']
+        longitude = geodata['lng']
+
+        url = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
+        response = requests.get(url).json()
+
+        airquality = response.get('list')[0].get('main', {}).get('aqi')
+        if airquality:
+            return jsonify(airquality)
+        else:
+            return f'Error getting air quality for city: {city.title()}'
 
 
 @app.route('/days/<city>')
@@ -429,33 +436,40 @@ def aqi(city):
 def days(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
-    google_key = environ.get('GOOGLE_KEY')
-    part = 'hourly'
-    googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
-    googleResponse = requests.get(googleUrl).json()
 
-    result = googleResponse['results'][0]
+    url_two = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response_two = requests.get(url_two).json()
 
-    geodata = dict()
-    geodata['lat'] = result['geometry']['location']['lat']
-    geodata['lng'] = result['geometry']['location']['lng']
+    if response_two.get('cod') != 200:
+        return make_response(f'Error getting a seven-day forecast for {city.title()}!', 404)
+    else:
+        google_key = environ.get('GOOGLE_KEY')
+        part = 'hourly'
+        googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+        googleResponse = requests.get(googleUrl).json()
 
-    latitude = geodata['lat']
-    longitude = geodata['lng']
+        result = googleResponse['results'][0]
 
-    url = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
-    response = requests.get(url).json()
+        geodata = dict()
+        geodata['lat'] = result['geometry']['location']['lat']
+        geodata['lng'] = result['geometry']['location']['lng']
 
-    days1 = response.get('daily')[0].get('temp').get('day')
-    days2 = response.get('daily')[1].get('temp').get('day')
-    days3 = response.get('daily')[2].get('temp').get('day')
-    days4 = response.get('daily')[3].get('temp').get('day')
-    days5 = response.get('daily')[4].get('temp').get('day')
-    days6 = response.get('daily')[5].get('temp').get('day')
-    days7 = response.get('daily')[6].get('temp').get('day')
+        latitude = geodata['lat']
+        longitude = geodata['lng']
 
-    s = f'Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
-    return jsonify(s)
+        url = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
+        response = requests.get(url).json()
+
+        days1 = response.get('daily')[0].get('temp').get('day')
+        days2 = response.get('daily')[1].get('temp').get('day')
+        days3 = response.get('daily')[2].get('temp').get('day')
+        days4 = response.get('daily')[3].get('temp').get('day')
+        days5 = response.get('daily')[4].get('temp').get('day')
+        days6 = response.get('daily')[5].get('temp').get('day')
+        days7 = response.get('daily')[6].get('temp').get('day')
+
+        s = f'Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
+        return jsonify(s)
 
 
 @app.route('/all/<city>')
@@ -463,67 +477,74 @@ def days(city):
 def all(city):
     assert city == request.view_args['city']
     api_key = environ.get('API_KEY')
-    google_key = environ.get('GOOGLE_KEY')
-    part = 'hourly'
-    url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
-    response = requests.get(url).json()
 
-    if response.get('cod') != 200:
-        message = response.get('message', '')
-        return f'Error getting temperature for {city.title()}. Error message = {message})'
+    url_two = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response_two = requests.get(url_two).json()
 
-    current_temperature = response.get('main', {}).get('temp')
-    press = response.get('main', {}).get('pressure')
-    humidity = response.get('main', {}).get('humidity')
-    feelslike = response.get('main', {}).get('feels_like')
-    windspeed = response.get('wind', {}).get('speed')
-
-    s = f'Temperature: {current_temperature} C-' \
-        f'Pressure: {press} Pa-Humidity: {humidity}/100-Felt temperature: {feelslike} C-Wind Speed: {windspeed} km/h-'
-
-    googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
-    googleResponse = requests.get(googleUrl).json()
-
-    result = googleResponse['results'][0]
-
-    geodata = dict()
-    geodata['lat'] = result['geometry']['location']['lat']
-    geodata['lng'] = result['geometry']['location']['lng']
-
-    latitude = geodata['lat']
-    longitude = geodata['lng']
-
-    urlPollution = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
-    responsePollution = requests.get(urlPollution).json()
-
-    airquality = responsePollution.get('list')[0].get('main', {}).get('aqi')
-    if airquality == 1:
-        s = s + f'Air quality: {airquality} (good)-'
-    elif airquality == 2:
-        s = s + f'Air quality: {airquality} (fair)-'
-    elif airquality == 3:
-        s = s + f'Air quality: {airquality} (moderate)-'
-    elif airquality == 4:
-        s = s + f'Air quality: {airquality} (poor)-'
-    elif airquality == 5:
-        s = s + f'Air quality: {airquality} (very poor)-'
+    if response_two.get('cod') != 200:
+        return make_response(f'Error getting data for {city.title()}!', 404)
     else:
-        return f'Error getting air quality for city: {city}'
+        google_key = environ.get('GOOGLE_KEY')
+        part = 'hourly'
+        url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+        response = requests.get(url).json()
 
-    urlOneCall = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
-    responseOneCall = requests.get(urlOneCall).json()
+        if response.get('cod') != 200:
+            message = response.get('message', '')
+            return f'Error getting temperature for {city.title()}. Error message = {message})'
 
-    days1 = responseOneCall.get('daily')[0].get('temp').get('day')
-    days2 = responseOneCall.get('daily')[1].get('temp').get('day')
-    days3 = responseOneCall.get('daily')[2].get('temp').get('day')
-    days4 = responseOneCall.get('daily')[3].get('temp').get('day')
-    days5 = responseOneCall.get('daily')[4].get('temp').get('day')
-    days6 = responseOneCall.get('daily')[5].get('temp').get('day')
-    days7 = responseOneCall.get('daily')[6].get('temp').get('day')
+        current_temperature = response.get('main', {}).get('temp')
+        press = response.get('main', {}).get('pressure')
+        humidity = response.get('main', {}).get('humidity')
+        feelslike = response.get('main', {}).get('feels_like')
+        windspeed = response.get('wind', {}).get('speed')
 
-    s = s + f'-Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
+        s = f'Temperature: {current_temperature} C-' \
+            f'Pressure: {press} Pa-Humidity: {humidity}/100-Felt temperature: {feelslike} C-Wind Speed: {windspeed} km/h-'
 
-    return jsonify(s)
+        googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+        googleResponse = requests.get(googleUrl).json()
+
+        result = googleResponse['results'][0]
+
+        geodata = dict()
+        geodata['lat'] = result['geometry']['location']['lat']
+        geodata['lng'] = result['geometry']['location']['lng']
+
+        latitude = geodata['lat']
+        longitude = geodata['lng']
+
+        urlPollution = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
+        responsePollution = requests.get(urlPollution).json()
+
+        airquality = responsePollution.get('list')[0].get('main', {}).get('aqi')
+        if airquality == 1:
+            s = s + f'Air quality: {airquality} (good)-'
+        elif airquality == 2:
+            s = s + f'Air quality: {airquality} (fair)-'
+        elif airquality == 3:
+            s = s + f'Air quality: {airquality} (moderate)-'
+        elif airquality == 4:
+            s = s + f'Air quality: {airquality} (poor)-'
+        elif airquality == 5:
+            s = s + f'Air quality: {airquality} (very poor)-'
+        else:
+            return f'Error getting air quality for city: {city}'
+
+        urlOneCall = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
+        responseOneCall = requests.get(urlOneCall).json()
+
+        days1 = responseOneCall.get('daily')[0].get('temp').get('day')
+        days2 = responseOneCall.get('daily')[1].get('temp').get('day')
+        days3 = responseOneCall.get('daily')[2].get('temp').get('day')
+        days4 = responseOneCall.get('daily')[3].get('temp').get('day')
+        days5 = responseOneCall.get('daily')[4].get('temp').get('day')
+        days6 = responseOneCall.get('daily')[5].get('temp').get('day')
+        days7 = responseOneCall.get('daily')[6].get('temp').get('day')
+
+        s = s + f'-Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
+
+        return jsonify(s)
 
 
 if __name__ == '__main__':
