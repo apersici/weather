@@ -2,10 +2,11 @@ from os import environ
 import psycopg2
 import requests
 import telebot
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, render_template
 from functools import wraps
 from flask import Response
 from telebot import *
+import hashlib
 
 app = Flask(__name__)
 
@@ -69,7 +70,7 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        if auth and auth.username == username and auth.password == password:
+        if auth and auth.username == username and hashlib.sha1(bytes(request.authorization.password, encoding='utf-8')).hexdigest() == password:
             return f(*args, **kwargs)
 
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
@@ -115,6 +116,7 @@ def sendMessage(chat_id, text):
 
 
 def sendTemperature(chat_id, text):
+    text = text.replace("'", "").replace("{", "").replace("}", "")
     if 'Error' in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
         r = requests.post(tUrl)
@@ -126,6 +128,7 @@ def sendTemperature(chat_id, text):
 
 
 def sendPressure(chat_id, text):
+    text = text.replace("'", "").replace("{", "").replace("}", "")
     if 'Error' in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
         r = requests.post(tUrl)
@@ -137,6 +140,7 @@ def sendPressure(chat_id, text):
 
 
 def sendHumidity(chat_id, text):
+    text = text.replace("'", "").replace("{", "").replace("}", "")
     if 'Error' in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
         r = requests.post(tUrl)
@@ -148,6 +152,7 @@ def sendHumidity(chat_id, text):
 
 
 def sendFeltTemp(chat_id, text):
+    text = text.replace("'", "").replace("{", "").replace("}", "")
     if 'Error' in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
         r = requests.post(tUrl)
@@ -159,6 +164,7 @@ def sendFeltTemp(chat_id, text):
 
 
 def sendWindSpeed(chat_id, text):
+    text = text.replace("'", "").replace("{", "").replace("}", "")
     if 'Error' in text:
         tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text[:-1]}'
         r = requests.post(tUrl)
@@ -170,39 +176,21 @@ def sendWindSpeed(chat_id, text):
 
 
 def sendAirQuality(chat_id, text):
-    if "1" in text:
-        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (good)'
-        r = requests.post(tUrl)
-        return r.json()
-    elif "2" in text:
-        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (fair)'
-        r = requests.post(tUrl)
-        return r.json()
-    elif "3" in text:
-        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (moderate)'
-        r = requests.post(tUrl)
-        return r.json()
-    elif "4" in text:
-        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (poor)'
-        r = requests.post(tUrl)
-        return r.json()
-    elif "5" in text:
-        tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text} (very poor)'
-        r = requests.post(tUrl)
-        return r.json()
+    text = text.replace("'", "").replace("{", "").replace("}", "")
+    tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
+    r = requests.post(tUrl)
+    return r.json()
 
 
 def sendDays(chat_id, text):
-    text = text.replace("-", "%0A")
-    text = text[1:-1]
+    text = text.replace("\n", "%0A").replace("'", "").replace("{", "").replace("}","")
     tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
     r = requests.post(tUrl)
     return r.json()
 
 
 def sendAll(chat_id, text):
-    text = text.replace("-", "%0A")
-    text = text[1:-1]
+    text = text.replace("\n", "%0A").replace("'", "").replace("{", "").replace("}","")
     tUrl = telegramUrl + f'/sendMessage?chat_id={chat_id}&text={text}'
     r = requests.post(tUrl)
     return r.json()
@@ -221,52 +209,78 @@ def index():
             sendMessage(chat_id, text=f'Hello {first_name}!\nWelcome to WeatherBot {clearSky}\n\nPlease input a city:')
         elif message == '/temp':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendTemperature(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+            responseTemp = response.get('weather')[0]
+            sendTemperature(chat_id, text=str(responseTemp))
         elif message == '/press':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/temp/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendPressure(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+            responsePress = response.get('weather')[1]
+            sendPressure(chat_id, text=str(responsePress))
         elif message == '/humidity':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/humidity/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendHumidity(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+            responseHum = response.get('weather')[2]
+            sendHumidity(chat_id, text=str(responseHum))
         elif message == '/felt':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/feelslike/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendFeltTemp(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+            responseFelt = response.get('weather')[3]
+            sendFeltTemp(chat_id, text=str(responseFelt))
         elif message == '/windspeed':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/wind/speed/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendWindSpeed(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+            responseWind = response.get('weather')[4]
+            sendWindSpeed(chat_id, text=str(responseWind))
         elif message == '/airquality':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/aqi/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendAirQuality(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+            responseAqi = response.get('weather')[5]
+            sendAirQuality(chat_id, text=str(responseAqi))
         elif message == '/days':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/days/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendDays(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+
+            responseDays1 = response.get('weather')[6].get('days')[0]
+            responseDays2 = response.get('weather')[6].get('days')[1]
+            responseDays3 = response.get('weather')[6].get('days')[2]
+            responseDays4 = response.get('weather')[6].get('days')[3]
+            responseDays5 = response.get('weather')[6].get('days')[4]
+            responseDays6 = response.get('weather')[6].get('days')[5]
+            responseDays7 = response.get('weather')[6].get('days')[6]
+
+            string = f'{responseDays1} °C\n{responseDays2} °C\n{responseDays3} °C\n{responseDays4} °C\n{responseDays5} °C\n{responseDays6} °C\n{responseDays7} °C'
+            sendDays(chat_id, text=string)
         elif message == '/all':
             message = getValue(chat_id)
-            urltwo = f'https://weatherserviceuni.herokuapp.com/all/{message}'
-            response = requests.get(urltwo, auth=(username, password))
-            response2 = response.content
-            sendAll(chat_id, text='' + response2.decode('utf-8').replace("\n", ""))
+            urltwo = f'https://weatherserviceuni.herokuapp.com/telegram/{message}'
+            response = requests.get(urltwo).json()
+
+            responseTemp = response.get('weather')[0]
+            responsePress = response.get('weather')[1]
+            responseHum = response.get('weather')[2]
+            responseFelt = response.get('weather')[3]
+            responseWind = response.get('weather')[4]
+            responseAqi = response.get('weather')[5]
+            responseDays1 = response.get('weather')[6].get('days')[0]
+            responseDays2 = response.get('weather')[6].get('days')[1]
+            responseDays3 = response.get('weather')[6].get('days')[2]
+            responseDays4 = response.get('weather')[6].get('days')[3]
+            responseDays5 = response.get('weather')[6].get('days')[4]
+            responseDays6 = response.get('weather')[6].get('days')[5]
+            responseDays7 = response.get('weather')[6].get('days')[6]
+
+            string = f'{responseTemp} °C\n{responsePress} Pa\n{responseHum}/100 \n{responseFelt} °C\n{responseWind} km/h\n'\
+                     f'{responseAqi}\n{responseDays1} °C\n{responseDays2} °C\n{responseDays3} °C\n{responseDays4} °C\n'\
+                     f'{responseDays5} °C\n{responseDays6} °C\n{responseDays7} °C'
+            sendAll(chat_id, text=string)
         elif message == 'start' or message == 'temp' or message == 'press' or message == 'humidity' or message == 'felt'\
                 or message == 'windspeed' or message == 'airquality' or message == 'days' or message == 'all':
             sendMessage(chat_id, text=f'City not found. Try again!')
@@ -300,7 +314,7 @@ def index():
 
     else:
 
-        if request.authorization and request.authorization.username == username and request.authorization.password == password:
+        if request.authorization and request.authorization.username == username and hashlib.sha1(bytes(request.authorization.password, encoding='utf-8')).hexdigest() == password:
             return '<h1>You are logged in</h1>'
 
         return make_response('Could not verify!', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
@@ -318,8 +332,11 @@ def temperature(city):
         return make_response(f'Error getting temperature for {city.title()}!', 404)
 
     current_temperature = response.get('main', {}).get('temp')
+    answer = {
+            "Temperature": current_temperature
+    }
     if current_temperature:
-        return jsonify(current_temperature)
+        return make_response(jsonify(answer), 200)
     else:
         return f'Error getting temperature for {city.title()}'
 
@@ -336,8 +353,11 @@ def pressure(city):
         return make_response(f'Error getting pressure for {city.title()}!', 404)
 
     press = response.get('main', {}).get('pressure')
+    answer = {
+        "Pressure": press
+    }
     if press:
-        return jsonify(press)
+        return make_response(jsonify(answer), 200)
     else:
         return f'Error getting pressure for {city.title()}'
 
@@ -354,8 +374,11 @@ def humidity(city):
         return make_response(f'Error getting humidity for {city.title()}!', 404)
 
     humidity = response.get('main', {}).get('humidity')
+    answer = {
+        "Humidity": humidity
+    }
     if humidity:
-        return jsonify(humidity)
+        return make_response(jsonify(answer), 200)
     else:
         return f'Error getting humidity for {city.title()}'
 
@@ -372,8 +395,11 @@ def feelslike(city):
         return make_response(f'Error getting felt temperature for {city.title()}!', 404)
 
     feelslike = response.get('main', {}).get('feels_like')
+    answer = {
+        "Felt": feelslike
+    }
     if feelslike:
-        return jsonify(feelslike)
+        return make_response(jsonify(answer), 200)
     else:
         return f'Error getting felt temperature for {city.title()}'
 
@@ -390,8 +416,11 @@ def wind(city):
         return make_response(f'Error getting wind speed for {city.title()}!', 404)
 
     windspeed = response.get('wind', {}).get('speed')
+    answer = {
+        "Wind": windspeed
+    }
     if windspeed:
-        return jsonify(windspeed)
+        return make_response(jsonify(answer), 200)
     else:
         return f'Error getting wind speed for {city.title()}'
 
@@ -425,8 +454,11 @@ def aqi(city):
         response = requests.get(url).json()
 
         airquality = response.get('list')[0].get('main', {}).get('aqi')
+        answer = {
+            "Aqi": airquality
+        }
         if airquality:
-            return jsonify(airquality)
+            return make_response(jsonify(answer), 200)
         else:
             return f'Error getting air quality for city: {city.title()}'
 
@@ -468,8 +500,34 @@ def days(city):
         days6 = response.get('daily')[5].get('temp').get('day')
         days7 = response.get('daily')[6].get('temp').get('day')
 
-        s = f'Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
-        return jsonify(s)
+        answer = {
+            "days": [
+                {
+                    "Day1": days1
+                },
+                {
+                    "Day2": days2
+                },
+                {
+                    "Day3": days3
+                },
+                {
+                    "Day4": days4
+                },
+                {
+                    "Day5": days5
+                },
+                {
+                    "Day6": days6
+                },
+                {
+                    "Day7": days7
+                }
+        ]
+
+        }
+
+        return make_response(jsonify(answer), 200)
 
 
 @app.route('/all/<city>')
@@ -499,8 +557,8 @@ def all(city):
         feelslike = response.get('main', {}).get('feels_like')
         windspeed = response.get('wind', {}).get('speed')
 
-        s = f'Temperature: {current_temperature} C-' \
-            f'Pressure: {press} Pa-Humidity: {humidity}/100-Felt temperature: {feelslike} C-Wind Speed: {windspeed} km/h-'
+        #s = f'Temperature: {current_temperature} C-' \
+        #    f'Pressure: {press} Pa-Humidity: {humidity}/100-Felt temperature: {feelslike} C-Wind Speed: {windspeed} km/h-'
 
         googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
         googleResponse = requests.get(googleUrl).json()
@@ -519,15 +577,15 @@ def all(city):
 
         airquality = responsePollution.get('list')[0].get('main', {}).get('aqi')
         if airquality == 1:
-            s = s + f'Air quality: {airquality} (good)-'
+            aq = f'{airquality} (good)'
         elif airquality == 2:
-            s = s + f'Air quality: {airquality} (fair)-'
+            aq = f'{airquality} (fair)'
         elif airquality == 3:
-            s = s + f'Air quality: {airquality} (moderate)-'
+            aq = f'{airquality} (moderate)'
         elif airquality == 4:
-            s = s + f'Air quality: {airquality} (poor)-'
+            aq = f'{airquality} (poor)'
         elif airquality == 5:
-            s = s + f'Air quality: {airquality} (very poor)-'
+            aq = f'{airquality} (very poor)'
         else:
             return f'Error getting air quality for city: {city}'
 
@@ -542,9 +600,181 @@ def all(city):
         days6 = responseOneCall.get('daily')[5].get('temp').get('day')
         days7 = responseOneCall.get('daily')[6].get('temp').get('day')
 
-        s = s + f'-Day1: {days1} C-Day2: {days2} C-Day3: {days3} C-Day4: {days4} C-Day5: {days5} C-Day6: {days6} C-Day7: {days7} C'
+        answer = {
+            "weather": [
+            {
+                "Temperature": current_temperature
+            },
+            {
+                "Pressure": press
+            },
+            {
+                "Humidity": humidity
+            },
+            {
+                "Felt": feelslike
+            },
+            {
+                "Wind": windspeed
+            },
+            {
+                "Aqi": aq
+            },
+            {
+                "days": [
+                {
+                    "Day1": days1
+                },
+                {
+                    "Day2": days2
+                },
+                {
+                    "Day3": days3
+                },
+                {
+                    "Day4": days4
+                },
+                {
+                    "Day5": days5
+                },
+                {
+                    "Day6": days6
+                },
+                {
+                    "Day7": days7
+                }
+                ]
+            }
 
-        return jsonify(s)
+        ]
+
+        }
+
+
+        return make_response(jsonify(answer), 200)
+
+
+@app.route('/telegram/<city>')
+def telegram(city):
+    assert city == request.view_args['city']
+    api_key = environ.get('API_KEY')
+
+    url_two = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+    response_two = requests.get(url_two).json()
+
+    if response_two.get('cod') != 200:
+        return make_response(f'Error getting data for {city.title()}!', 404)
+    else:
+        google_key = environ.get('GOOGLE_KEY')
+        part = 'hourly'
+        url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric'
+        response = requests.get(url).json()
+
+        if response.get('cod') != 200:
+            message = response.get('message', '')
+            return f'Error getting temperature for {city.title()}. Error message = {message})'
+
+        current_temperature = response.get('main', {}).get('temp')
+        press = response.get('main', {}).get('pressure')
+        humidity = response.get('main', {}).get('humidity')
+        feelslike = response.get('main', {}).get('feels_like')
+        windspeed = response.get('wind', {}).get('speed')
+
+        #s = f'Temperature: {current_temperature} C-' \
+        #    f'Pressure: {press} Pa-Humidity: {humidity}/100-Felt temperature: {feelslike} C-Wind Speed: {windspeed} km/h-'
+
+        googleUrl = f'https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={google_key}'
+        googleResponse = requests.get(googleUrl).json()
+
+        result = googleResponse['results'][0]
+
+        geodata = dict()
+        geodata['lat'] = result['geometry']['location']['lat']
+        geodata['lng'] = result['geometry']['location']['lng']
+
+        latitude = geodata['lat']
+        longitude = geodata['lng']
+
+        urlPollution = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={latitude}&lon={longitude}&appid={api_key}'
+        responsePollution = requests.get(urlPollution).json()
+
+        airquality = responsePollution.get('list')[0].get('main', {}).get('aqi')
+        if airquality == 1:
+            aq = f'{airquality} (good)'
+        elif airquality == 2:
+            aq = f'{airquality} (fair)'
+        elif airquality == 3:
+            aq = f'{airquality} (moderate)'
+        elif airquality == 4:
+            aq = f'{airquality} (poor)'
+        elif airquality == 5:
+            aq = f'{airquality} (very poor)'
+        else:
+            return f'Error getting air quality for city: {city}'
+
+        urlOneCall = f'https://api.openweathermap.org/data/2.5/onecall?lat={latitude}&lon={longitude}&exclude={part}&appid={api_key}&units=metric'
+        responseOneCall = requests.get(urlOneCall).json()
+
+        days1 = responseOneCall.get('daily')[0].get('temp').get('day')
+        days2 = responseOneCall.get('daily')[1].get('temp').get('day')
+        days3 = responseOneCall.get('daily')[2].get('temp').get('day')
+        days4 = responseOneCall.get('daily')[3].get('temp').get('day')
+        days5 = responseOneCall.get('daily')[4].get('temp').get('day')
+        days6 = responseOneCall.get('daily')[5].get('temp').get('day')
+        days7 = responseOneCall.get('daily')[6].get('temp').get('day')
+
+        answer = {
+            "weather": [
+            {
+                "Temperature": current_temperature
+            },
+            {
+                "Pressure": press
+            },
+            {
+                "Humidity": humidity
+            },
+            {
+                "Felt": feelslike
+            },
+            {
+                "Wind": windspeed
+            },
+            {
+                "Aqi": aq
+            },
+            {
+                "days": [
+                {
+                    "Day1": days1
+                },
+                {
+                    "Day2": days2
+                },
+                {
+                    "Day3": days3
+                },
+                {
+                    "Day4": days4
+                },
+                {
+                    "Day5": days5
+                },
+                {
+                    "Day6": days6
+                },
+                {
+                    "Day7": days7
+                }
+                ]
+            }
+
+        ]
+
+        }
+
+
+        return make_response(jsonify(answer), 200)
 
 
 if __name__ == '__main__':
